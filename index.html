@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusCRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --bg2: #111318;
+    --bg3: #181b23;
+    --border: #1e2230;
+    --border2: #252a38;
+    --text: #e8eaf0;
+    --text2: #8890a8;
+    --text3: #4a5068;
+    --accent: #6c63ff;
+    --accent2: #8b7fff;
+    --accent-glow: rgba(108,99,255,0.15);
+    --green: #22d3a0;
+    --green-bg: rgba(34,211,160,0.1);
+    --orange: #ff9f43;
+    --orange-bg: rgba(255,159,67,0.1);
+    --red: #ff5252;
+    --red-bg: rgba(255,82,82,0.1);
+    --blue: #38bdf8;
+    --blue-bg: rgba(56,189,248,0.1);
+    --yellow: #ffd43b;
+    --sidebar-w: 220px;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; overflow:hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width:var(--sidebar-w); min-height:100vh; background:var(--bg2);
+    border-right:1px solid var(--border); display:flex; flex-direction:column;
+    padding:24px 12px; position:fixed; left:0; top:0; z-index:100;
+  }
+  .logo { display:flex; align-items:center; gap:10px; padding:0 8px; margin-bottom:32px; }
+  .logo-icon { width:32px; height:32px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; color:#fff; }
+  .logo-name { font-family:'Syne',sans-serif; font-weight:700; font-size:18px; color:var(--text); }
+  .logo-name span { color:var(--accent2); }
+
+  .nav-section { font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); padding:0 8px; margin:16px 0 6px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); cursor:pointer; color:var(--text2); font-size:14px; font-weight:400; transition:all .15s; margin-bottom:2px; text-decoration:none; }
+  .nav-item:hover { background:var(--bg3); color:var(--text); }
+  .nav-item.active { background:var(--accent-glow); color:var(--accent2); border:1px solid rgba(108,99,255,0.2); }
+  .nav-item svg { width:16px; height:16px; flex-shrink:0; }
+
+  /* ── MAIN ── */
+  .main { margin-left:var(--sidebar-w); flex:1; overflow-y:auto; min-height:100vh; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:50; backdrop-filter:blur(10px); }
+  .topbar-title { font-family:'Syne',sans-serif; font-weight:700; font-size:20px; }
+  .topbar-right { display:flex; align-items:center; gap:12px; }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; font-family:'DM Sans',sans-serif; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-ghost { background:transparent; color:var(--text2); border:1px solid var(--border2); }
+  .btn-ghost:hover { background:var(--bg3); color:var(--text); }
+  .btn-danger { background:var(--red-bg); color:var(--red); border:1px solid rgba(255,82,82,0.2); }
+  .btn-danger:hover { background:rgba(255,82,82,0.2); }
+  .btn-sm { padding:5px 12px; font-size:12px; }
+  .content { padding:24px 28px; }
+
+  /* ── PAGES ── */
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* ── DASHBOARD STATS ── */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; position:relative; overflow:hidden; }
+  .stat-card::before { content:''; position:absolute; top:0; right:0; width:80px; height:80px; border-radius:50%; transform:translate(20px,-20px); opacity:0.5; }
+  .stat-card.green::before { background:var(--green-bg); }
+  .stat-card.purple::before { background:var(--accent-glow); }
+  .stat-card.orange::before { background:var(--orange-bg); }
+  .stat-card.blue::before { background:var(--blue-bg); }
+  .stat-label { font-size:12px; color:var(--text2); font-weight:500; margin-bottom:8px; }
+  .stat-value { font-family:'Syne',sans-serif; font-size:28px; font-weight:700; color:var(--text); }
+  .stat-sub { font-size:12px; color:var(--text3); margin-top:4px; }
+  .stat-icon { position:absolute; top:20px; right:20px; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .stat-icon.green { background:var(--green-bg); color:var(--green); }
+  .stat-icon.purple { background:var(--accent-glow); color:var(--accent2); }
+  .stat-icon.orange { background:var(--orange-bg); color:var(--orange); }
+  .stat-icon.blue { background:var(--blue-bg); color:var(--blue); }
+
+  /* ── PIPELINE ── */
+  .section-title { font-family:'Syne',sans-serif; font-weight:600; font-size:15px; color:var(--text); margin-bottom:14px; }
+  .pipeline-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:24px; }
+  .pipeline-col { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px; text-align:center; }
+  .pipeline-stage { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .pipeline-count { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; }
+  .pipeline-val { font-size:11px; color:var(--text2); margin-top:3px; }
+
+  /* ── GRID 2COL ── */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead th { text-align:left; padding:10px 14px; font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid var(--border); }
+  tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:rgba(255,255,255,0.02); }
+  tbody td { padding:12px 14px; color:var(--text2); vertical-align:middle; }
+  tbody td:first-child { color:var(--text); font-weight:500; }
+
+  /* ── BADGES ── */
+  .badge { display:inline-flex; align-items:center; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:0.3px; }
+  .badge-lead { background:var(--blue-bg); color:var(--blue); }
+  .badge-prospect { background:var(--orange-bg); color:var(--orange); }
+  .badge-customer { background:var(--green-bg); color:var(--green); }
+  .badge-churned { background:var(--red-bg); color:var(--red); }
+  .badge-new { background:var(--blue-bg); color:var(--blue); }
+  .badge-contacted { background:rgba(255,212,59,0.1); color:var(--yellow); }
+  .badge-proposal { background:var(--orange-bg); color:var(--orange); }
+  .badge-negotiation { background:rgba(200,100,255,0.15); color:#c864ff; }
+  .badge-won { background:var(--green-bg); color:var(--green); }
+  .badge-lost { background:var(--red-bg); color:var(--red); }
+  .badge-todo { background:var(--blue-bg); color:var(--blue); }
+  .badge-in_progress { background:var(--orange-bg); color:var(--orange); }
+  .badge-done { background:var(--green-bg); color:var(--green); }
+  .badge-low { background:var(--green-bg); color:var(--green); }
+  .badge-medium { background:var(--orange-bg); color:var(--orange); }
+  .badge-high { background:var(--red-bg); color:var(--red); }
+
+  /* ── SEARCH / FILTER BAR ── */
+  .toolbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .search-box { display:flex; align-items:center; gap:8px; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:8px 14px; flex:1; max-width:320px; }
+  .search-box input { background:none; border:none; outline:none; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; width:100%; }
+  .search-box input::placeholder { color:var(--text3); }
+  .search-box svg { color:var(--text3); width:14px; height:14px; flex-shrink:0; }
+  select.filter-sel { background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:8px 12px; color:var(--text2); font-size:13px; outline:none; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:200; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--bg2); border:1px solid var(--border2); border-radius:16px; width:100%; max-width:480px; padding:28px; position:relative; animation:slideUp .2s ease; }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-title { font-family:'Syne',sans-serif; font-weight:700; font-size:18px; margin-bottom:20px; }
+  .modal-close { position:absolute; top:20px; right:20px; background:none; border:none; color:var(--text2); cursor:pointer; font-size:18px; line-height:1; }
+  .form-row { margin-bottom:14px; }
+  .form-row label { display:block; font-size:12px; font-weight:500; color:var(--text2); margin-bottom:6px; letter-spacing:0.3px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width:100%; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm);
+    padding:9px 12px; color:var(--text); font-size:13px; outline:none; font-family:'DM Sans',sans-serif; transition:border .15s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color:var(--accent); }
+  .form-row textarea { resize:vertical; min-height:80px; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+
+  /* ── ACTIVITY FEED ── */
+  .activity-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
+  .act-call { background:var(--blue-bg); }
+  .act-email { background:var(--green-bg); }
+  .act-meeting { background:var(--orange-bg); }
+  .act-note { background:rgba(108,99,255,0.15); }
+  .activity-body { flex:1; min-width:0; }
+  .activity-desc { font-size:13px; color:var(--text); line-height:1.4; }
+  .activity-meta { font-size:11px; color:var(--text3); margin-top:3px; }
+
+  /* ── ACTION ICONS ── */
+  .actions { display:flex; gap:6px; }
+  .icon-btn { width:28px; height:28px; border-radius:6px; border:1px solid var(--border2); background:none; color:var(--text2); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all .15s; }
+  .icon-btn:hover { background:var(--bg3); color:var(--text); }
+  .icon-btn.del:hover { background:var(--red-bg); color:var(--red); border-color:rgba(255,82,82,0.3); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align:center; padding:48px 24px; color:var(--text3); }
+  .empty svg { width:40px; height:40px; margin:0 auto 12px; opacity:0.3; display:block; }
+  .empty p { font-size:14px; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+  /* ── TOAST ── */
+  .toast-container { position:fixed; bottom:24px; right:24px; z-index:999; display:flex; flex-direction:column; gap:8px; }
+  .toast { background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:12px 16px; font-size:13px; color:var(--text); display:flex; align-items:center; gap:10px; animation:toastIn .2s ease; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  @keyframes toastIn { from{transform:translateX(20px);opacity:0} to{transform:none;opacity:1} }
+  .toast.success { border-left:3px solid var(--green); }
+  .toast.error { border-left:3px solid var(--red); }
+
+  .dot { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px; }
+
+  .avatar { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; font-family:'Syne',sans-serif; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">N</div>
+    <div class="logo-name">Nexus<span>CRM</span></div>
+  </div>
+
+  <div class="nav-section">Asosiy</div>
+  <a class="nav-item active" onclick="showPage('dashboard',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" onclick="showPage('customers',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Mijozlar
+  </a>
+  <a class="nav-item" onclick="showPage('deals',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Bitimlar
+  </a>
+  <a class="nav-item" onclick="showPage('tasks',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Vazifalar
+  </a>
+  <a class="nav-item" onclick="showPage('activities',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Faoliyat
+  </a>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="loadAll()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+        Yangilash
+      </button>
+      <button class="btn btn-primary btn-sm" id="addBtn" onclick="openAddModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Qo'shish
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card purple">
+          <div class="stat-icon purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+          <div class="stat-label">Jami Mijozlar</div>
+          <div class="stat-value" id="stat-customers">—</div>
+          <div class="stat-sub">Faol CRM bazasi</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div class="stat-label">Pipeline Qiymati</div>
+          <div class="stat-value" id="stat-pipeline">—</div>
+          <div class="stat-sub">Faol bitimlar</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon orange"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+          <div class="stat-label">Yutilgan Bitimlar</div>
+          <div class="stat-value" id="stat-won">—</div>
+          <div class="stat-sub" id="stat-won-val">daromad</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <div class="stat-label">Kutilayotgan Vazifalar</div>
+          <div class="stat-value" id="stat-tasks">—</div>
+          <div class="stat-sub">Bajarilmagan</div>
+        </div>
+      </div>
+
+      <div class="section-title">Pipeline holati</div>
+      <div class="pipeline-grid" id="pipeline-stages"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title">So'nggi Bitimlar</div>
+          <div id="dash-deals"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">So'nggi Faoliyat</div>
+          <div id="dash-activities"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CUSTOMERS ═══ -->
+    <div class="page" id="page-customers">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="cust-search" placeholder="Ism, email, kompaniya..." oninput="filterCustomers()">
+        </div>
+        <select class="filter-sel" id="cust-status-filter" onchange="filterCustomers()">
+          <option value="">Barcha holat</option>
+          <option value="lead">Lead</option>
+          <option value="prospect">Prospect</option>
+          <option value="customer">Mijoz</option>
+          <option value="churned">Churned</option>
+        </select>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead><tr><th>Ism</th><th>Kompaniya</th><th>Email</th><th>Telefon</th><th>Holat</th><th>Qo'shilgan</th><th></th></tr></thead>
+          <tbody id="customers-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ DEALS ═══ -->
+    <div class="page" id="page-deals">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="deal-search" placeholder="Bitim nomi..." oninput="filterDeals()">
+        </div>
+        <select class="filter-sel" id="deal-stage-filter" onchange="filterDeals()">
+          <option value="">Barcha bosqich</option>
+          <option value="new">Yangi</option>
+          <option value="contacted">Bog'lanildi</option>
+          <option value="proposal">Taklif</option>
+          <option value="negotiation">Muzokaralar</option>
+          <option value="won">Yutildi</option>
+          <option value="lost">Yo'qotildi</option>
+        </select>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead><tr><th>Nomi</th><th>Mijoz</th><th>Qiymati</th><th>Bosqich</th><th>Ehtimol</th><th>Yopish sanasi</th><th></th></tr></thead>
+          <tbody id="deals-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ TASKS ═══ -->
+    <div class="page" id="page-tasks">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="task-search" placeholder="Vazifa nomi..." oninput="filterTasks()">
+        </div>
+        <select class="filter-sel" id="task-status-filter" onchange="filterTasks()">
+          <option value="">Barcha holat</option>
+          <option value="todo">Kutilmoqda</option>
+          <option value="in_progress">Jarayonda</option>
+          <option value="done">Bajarildi</option>
+        </select>
+        <select class="filter-sel" id="task-priority-filter" onchange="filterTasks()">
+          <option value="">Barcha muhimlik</option>
+          <option value="high">Yuqori</option>
+          <option value="medium">O'rta</option>
+          <option value="low">Past</option>
+        </select>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead><tr><th>Vazifa</th><th>Mijoz</th><th>Muhimlik</th><th>Holat</th><th>Muddat</th><th></th></tr></thead>
+          <tbody id="tasks-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ ACTIVITIES ═══ -->
+    <div class="page" id="page-activities">
+      <div class="card">
+        <div id="activities-feed"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ═══════════ MODALS ═══════════ -->
+
+<!-- Customer Modal -->
+<div class="modal-overlay" id="modal-customer">
+  <div class="modal">
+    <div class="modal-title" id="modal-cust-title">Yangi Mijoz</div>
+    <button class="modal-close" onclick="closeModal('modal-customer')">✕</button>
+    <input type="hidden" id="cust-id">
+    <div class="form-grid-2">
+      <div class="form-row"><label>Ism *</label><input id="cust-name" placeholder="Alisher Ergashev"></div>
+      <div class="form-row"><label>Kompaniya</label><input id="cust-company" placeholder="Tech UZ"></div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Email</label><input id="cust-email" type="email" placeholder="alisher@email.com"></div>
+      <div class="form-row"><label>Telefon</label><input id="cust-phone" placeholder="+998 90 123 45 67"></div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Holat</label>
+        <select id="cust-status"><option value="lead">Lead</option><option value="prospect">Prospect</option><option value="customer">Mijoz</option><option value="churned">Churned</option></select>
+      </div>
+      <div class="form-row"><label>Manba</label><input id="cust-source" placeholder="Referral, Website..."></div>
+    </div>
+    <div class="form-row"><label>Izoh</label><textarea id="cust-notes" placeholder="Qo'shimcha ma'lumot..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-customer')">Bekor</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Deal Modal -->
+<div class="modal-overlay" id="modal-deal">
+  <div class="modal">
+    <div class="modal-title" id="modal-deal-title">Yangi Bitim</div>
+    <button class="modal-close" onclick="closeModal('modal-deal')">✕</button>
+    <input type="hidden" id="deal-id">
+    <div class="form-row"><label>Nomi *</label><input id="deal-name" placeholder="Enterprise shartnomasi"></div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Qiymati (USD)</label><input id="deal-value" type="number" placeholder="5000"></div>
+      <div class="form-row"><label>Ehtimollik (%)</label><input id="deal-prob" type="number" min="0" max="100" placeholder="70"></div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Bosqich</label>
+        <select id="deal-stage"><option value="new">Yangi</option><option value="contacted">Bog'lanildi</option><option value="proposal">Taklif</option><option value="negotiation">Muzokaralar</option><option value="won">Yutildi</option><option value="lost">Yo'qotildi</option></select>
+      </div>
+      <div class="form-row"><label>Yopish sanasi</label><input id="deal-close" type="date"></div>
+    </div>
+    <div class="form-row"><label>Mijoz</label>
+      <select id="deal-customer"><option value="">— Tanlang —</option></select>
+    </div>
+    <div class="form-row"><label>Izoh</label><textarea id="deal-notes" placeholder="Bitim tafsilotlari..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-deal')">Bekor</button>
+      <button class="btn btn-primary" onclick="saveDeal()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <div class="modal-title" id="modal-task-title">Yangi Vazifa</div>
+    <button class="modal-close" onclick="closeModal('modal-task')">✕</button>
+    <input type="hidden" id="task-id">
+    <div class="form-row"><label>Nomi *</label><input id="task-name" placeholder="Mijozga qo'ng'iroq qilish"></div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Holat</label>
+        <select id="task-status"><option value="todo">Kutilmoqda</option><option value="in_progress">Jarayonda</option><option value="done">Bajarildi</option></select>
+      </div>
+      <div class="form-row"><label>Muhimlik</label>
+        <select id="task-priority"><option value="low">Past</option><option value="medium">O'rta</option><option value="high">Yuqori</option></select>
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Muddat</label><input id="task-due" type="date"></div>
+      <div class="form-row"><label>Mijoz</label>
+        <select id="task-customer"><option value="">— Tanlang —</option></select>
+      </div>
+    </div>
+    <div class="form-row"><label>Tavsif</label><textarea id="task-desc" placeholder="Vazifa tafsilotlari..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-task')">Bekor</button>
+      <button class="btn btn-primary" onclick="saveTask()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Activity Modal -->
+<div class="modal-overlay" id="modal-activity">
+  <div class="modal">
+    <div class="modal-title">Yangi Faoliyat</div>
+    <button class="modal-close" onclick="closeModal('modal-activity')">✕</button>
+    <div class="form-row"><label>Tur</label>
+      <select id="act-type"><option value="call">📞 Qo'ng'iroq</option><option value="email">📧 Email</option><option value="meeting">🤝 Uchrashuv</option><option value="note">📝 Izoh</option></select>
+    </div>
+    <div class="form-row"><label>Mijoz</label>
+      <select id="act-customer"><option value="">— Tanlang —</option></select>
+    </div>
+    <div class="form-row"><label>Tavsif *</label><textarea id="act-desc" placeholder="Nima bo'ldi?"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-activity')">Bekor</button>
+      <button class="btn btn-primary" onclick="saveActivity()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+const API = 'http://localhost:8000/api';
+let currentPage = 'dashboard';
+let allCustomers = [], allDeals = [], allTasks = [], allActivities = [];
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+const pageTitles = { dashboard:'Dashboard', customers:'Mijozlar', deals:'Bitimlar', tasks:'Vazifalar', activities:'Faoliyat' };
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  currentPage = name;
+  document.getElementById('pageTitle').textContent = pageTitles[name];
+  loadPage(name);
+}
+
+function loadPage(name) {
+  if (name === 'dashboard') loadDashboard();
+  else if (name === 'customers') loadCustomers();
+  else if (name === 'deals') loadDeals();
+  else if (name === 'tasks') loadTasks();
+  else if (name === 'activities') loadActivities();
+}
+
+function loadAll() { loadPage(currentPage); }
+
+// ─── API HELPERS ─────────────────────────────────────────────────────────────
+async function apiFetch(path, opts={}) {
+  try {
+    const r = await fetch(API + path, { headers:{'Content-Type':'application/json'}, ...opts });
+    if (!r.ok) throw new Error(await r.text());
+    return await r.json();
+  } catch(e) {
+    toast('Xato: ' + e.message, 'error');
+    throw e;
+  }
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = (type==='success'?'✓ ':'✗ ') + msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function openAddModal() {
+  if (currentPage === 'customers') openCustomerModal();
+  else if (currentPage === 'deals') openDealModal();
+  else if (currentPage === 'tasks') openTaskModal();
+  else if (currentPage === 'activities') openActivityModal();
+  else if (currentPage === 'dashboard') openCustomerModal();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fmt(n) { return '$' + Number(n||0).toLocaleString(); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('uz-UZ') : '—'; }
+function badge(cls, text) { return `<span class="badge badge-${cls}">${text}</span>`; }
+const statusLbls = { lead:'Lead', prospect:'Prospect', customer:'Mijoz', churned:'Churned' };
+const stageLbls = { new:'Yangi', contacted:"Bog'lanildi", proposal:'Taklif', negotiation:'Muzokaralar', won:'Yutildi', lost:"Yo'qotildi" };
+const taskStatusLbls = { todo:'Kutilmoqda', in_progress:'Jarayonda', done:'Bajarildi' };
+const prioLbls = { low:'Past', medium:"O'rta", high:'Yuqori' };
+const actIcons = { call:'📞', email:'📧', meeting:'🤝', note:'📝' };
+const actClrs = { call:'#38bdf8', email:'#22d3a0', meeting:'#ff9f43', note:'#8b7fff' };
+
+function avatarColor(name='?') {
+  const colors = ['#6c63ff','#22d3a0','#ff9f43','#38bdf8','#ff5252','#c864ff'];
+  let h = 0; for(let c of name) h += c.charCodeAt(0);
+  return colors[h % colors.length];
+}
+function initials(name='?') { return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const d = await apiFetch('/dashboard/stats');
+  document.getElementById('stat-customers').textContent = d.total_customers;
+  document.getElementById('stat-pipeline').textContent = fmt(d.pipeline_value);
+  document.getElementById('stat-won').textContent = d.won_deals;
+  document.getElementById('stat-won-val').textContent = fmt(d.won_value) + ' yutildi';
+  document.getElementById('stat-tasks').textContent = d.pending_tasks;
+
+  // Pipeline stages
+  const stageColors = { new:'#38bdf8', contacted:'#ffd43b', proposal:'#ff9f43', negotiation:'#c864ff', won:'#22d3a0', lost:'#ff5252' };
+  document.getElementById('pipeline-stages').innerHTML = d.pipeline_by_stage.map(s => `
+    <div class="pipeline-col">
+      <div class="pipeline-stage" style="color:${stageColors[s.stage]}">${stageLbls[s.stage]}</div>
+      <div class="pipeline-count" style="color:${stageColors[s.stage]}">${s.count}</div>
+      <div class="pipeline-val">${fmt(s.value)}</div>
+    </div>
+  `).join('');
+
+  // Recent deals
+  const deals = await apiFetch('/deals?limit=5');
+  document.getElementById('dash-deals').innerHTML = deals.length ? deals.map(d => `
+    <div class="activity-item">
+      <div class="activity-body">
+        <div class="activity-desc" style="display:flex;align-items:center;justify-content:space-between">
+          <span>${d.title}</span>
+          <span style="color:var(--green);font-weight:600;font-size:13px">${fmt(d.value)}</span>
+        </div>
+        <div class="activity-meta">${badge(d.stage, stageLbls[d.stage])} &nbsp; ${d.customer?.name||'—'}</div>
+      </div>
+    </div>
+  `).join('') : '<div class="empty"><p>Bitimlar yo\'q</p></div>';
+
+  // Recent activities
+  document.getElementById('dash-activities').innerHTML = d.recent_activities.length
+    ? d.recent_activities.map(a => `
+      <div class="activity-item">
+        <div class="activity-icon act-${a.type}" style="font-size:16px;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center">${actIcons[a.type]||'•'}</div>
+        <div class="activity-body">
+          <div class="activity-desc">${a.description||'—'}</div>
+          <div class="activity-meta">${a.customer?.name||''} · ${fmtDate(a.created_at)}</div>
+        </div>
+      </div>
+    `).join('')
+    : '<div class="empty"><p>Faoliyat yo\'q</p></div>';
+}
+
+// ─── CUSTOMERS ───────────────────────────────────────────────────────────────
+async function loadCustomers() {
+  allCustomers = await apiFetch('/customers?limit=200');
+  renderCustomers(allCustomers);
+}
+function renderCustomers(list) {
+  const tb = document.getElementById('customers-tbody');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty"><p>Mijozlar topilmadi</p></div></td></tr>'; return; }
+  tb.innerHTML = list.map(c => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:9px">
+        <div class="avatar" style="background:${avatarColor(c.name)};color:#fff">${initials(c.name)}</div>
+        ${c.name}
+      </div></td>
+      <td>${c.company||'—'}</td>
+      <td>${c.email||'—'}</td>
+      <td>${c.phone||'—'}</td>
+      <td>${badge(c.status, statusLbls[c.status]||c.status)}</td>
+      <td>${fmtDate(c.created_at)}</td>
+      <td><div class="actions">
+        <button class="icon-btn" onclick='editCustomer(${JSON.stringify(c)})' title="Tahrirlash">✏️</button>
+        <button class="icon-btn del" onclick="deleteCustomer(${c.id})" title="O'chirish">🗑</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+function filterCustomers() {
+  const q = document.getElementById('cust-search').value.toLowerCase();
+  const s = document.getElementById('cust-status-filter').value;
+  renderCustomers(allCustomers.filter(c =>
+    (!q || (c.name+c.email+c.company).toLowerCase().includes(q)) &&
+    (!s || c.status === s)
+  ));
+}
+
+function openCustomerModal(c=null) {
+  document.getElementById('modal-cust-title').textContent = c ? 'Mijozni Tahrirlash' : 'Yangi Mijoz';
+  document.getElementById('cust-id').value = c?.id || '';
+  document.getElementById('cust-name').value = c?.name || '';
+  document.getElementById('cust-email').value = c?.email || '';
+  document.getElementById('cust-phone').value = c?.phone || '';
+  document.getElementById('cust-company').value = c?.company || '';
+  document.getElementById('cust-status').value = c?.status || 'lead';
+  document.getElementById('cust-source').value = c?.source || '';
+  document.getElementById('cust-notes').value = c?.notes || '';
+  openModal('modal-customer');
+}
+function editCustomer(c) { openCustomerModal(c); }
+async function saveCustomer() {
+  const id = document.getElementById('cust-id').value;
+  const data = {
+    name: document.getElementById('cust-name').value,
+    email: document.getElementById('cust-email').value,
+    phone: document.getElementById('cust-phone').value,
+    company: document.getElementById('cust-company').value,
+    status: document.getElementById('cust-status').value,
+    source: document.getElementById('cust-source').value,
+    notes: document.getElementById('cust-notes').value,
+  };
+  if (!data.name) { toast("Ism majburiy!", 'error'); return; }
+  if (id) await apiFetch('/customers/'+id, { method:'PUT', body:JSON.stringify(data) });
+  else await apiFetch('/customers', { method:'POST', body:JSON.stringify(data) });
+  toast(id ? 'Mijoz yangilandi' : 'Mijoz qo\'shildi');
+  closeModal('modal-customer');
+  loadCustomers();
+}
+async function deleteCustomer(id) {
+  if (!confirm('Mijozni o\'chirishni tasdiqlaysizmi?')) return;
+  await apiFetch('/customers/'+id, {method:'DELETE'});
+  toast('Mijoz o\'chirildi');
+  loadCustomers();
+}
+
+// ─── DEALS ───────────────────────────────────────────────────────────────────
+async function loadDeals() {
+  allDeals = await apiFetch('/deals?limit=200');
+  renderDeals(allDeals);
+}
+function renderDeals(list) {
+  const tb = document.getElementById('deals-tbody');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty"><p>Bitimlar topilmadi</p></div></td></tr>'; return; }
+  tb.innerHTML = list.map(d => `
+    <tr>
+      <td>${d.title}</td>
+      <td>${d.customer?.name||'—'}</td>
+      <td style="color:var(--green);font-weight:600">${fmt(d.value)}</td>
+      <td>${badge(d.stage, stageLbls[d.stage]||d.stage)}</td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="width:${d.probability||0}%;height:4px;background:var(--accent);border-radius:2px"></div></div>
+        <span style="font-size:11px;color:var(--text2)">${d.probability||0}%</span>
+      </div></td>
+      <td>${fmtDate(d.close_date)}</td>
+      <td><div class="actions">
+        <button class="icon-btn" onclick='editDeal(${JSON.stringify(d)})'>✏️</button>
+        <button class="icon-btn del" onclick="deleteDeal(${d.id})">🗑</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+function filterDeals() {
+  const q = document.getElementById('deal-search').value.toLowerCase();
+  const s = document.getElementById('deal-stage-filter').value;
+  renderDeals(allDeals.filter(d => (!q || d.title.toLowerCase().includes(q)) && (!s || d.stage === s)));
+}
+
+async function openDealModal(d=null) {
+  await populateCustomerSelect('deal-customer', d?.customer_id);
+  document.getElementById('modal-deal-title').textContent = d ? 'Bitimni Tahrirlash' : 'Yangi Bitim';
+  document.getElementById('deal-id').value = d?.id || '';
+  document.getElementById('deal-name').value = d?.title || '';
+  document.getElementById('deal-value').value = d?.value || '';
+  document.getElementById('deal-prob').value = d?.probability || 50;
+  document.getElementById('deal-stage').value = d?.stage || 'new';
+  document.getElementById('deal-close').value = d?.close_date ? d.close_date.split('T')[0] : '';
+  document.getElementById('deal-notes').value = d?.notes || '';
+  openModal('modal-deal');
+}
+function editDeal(d) { openDealModal(d); }
+async function saveDeal() {
+  const id = document.getElementById('deal-id').value;
+  const data = {
+    title: document.getElementById('deal-name').value,
+    value: parseFloat(document.getElementById('deal-value').value)||0,
+    probability: parseInt(document.getElementById('deal-prob').value)||50,
+    stage: document.getElementById('deal-stage').value,
+    close_date: document.getElementById('deal-close').value || null,
+    customer_id: parseInt(document.getElementById('deal-customer').value)||null,
+    notes: document.getElementById('deal-notes').value,
+  };
+  if (!data.title) { toast('Nomi majburiy!','error'); return; }
+  if (id) await apiFetch('/deals/'+id,{method:'PUT',body:JSON.stringify(data)});
+  else await apiFetch('/deals',{method:'POST',body:JSON.stringify(data)});
+  toast(id ? 'Bitim yangilandi' : 'Bitim qo\'shildi');
+  closeModal('modal-deal'); loadDeals();
+}
+async function deleteDeal(id) {
+  if (!confirm('Bitimni o\'chirishni tasdiqlaysizmi?')) return;
+  await apiFetch('/deals/'+id,{method:'DELETE'});
+  toast('Bitim o\'chirildi'); loadDeals();
+}
+
+// ─── TASKS ───────────────────────────────────────────────────────────────────
+async function loadTasks() {
+  allTasks = await apiFetch('/tasks?limit=200');
+  renderTasks(allTasks);
+}
+function renderTasks(list) {
+  const tb = document.getElementById('tasks-tbody');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty"><p>Vazifalar topilmadi</p></div></td></tr>'; return; }
+  tb.innerHTML = list.map(t => `
+    <tr>
+      <td>${t.title}</td>
+      <td>${t.customer?.name||'—'}</td>
+      <td>${badge(t.priority, prioLbls[t.priority]||t.priority)}</td>
+      <td>${badge(t.status, taskStatusLbls[t.status]||t.status)}</td>
+      <td>${fmtDate(t.due_date)}</td>
+      <td><div class="actions">
+        <button class="icon-btn" onclick='editTask(${JSON.stringify(t)})'>✏️</button>
+        <button class="icon-btn del" onclick="deleteTask(${t.id})">🗑</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+function filterTasks() {
+  const q = document.getElementById('task-search').value.toLowerCase();
+  const s = document.getElementById('task-status-filter').value;
+  const p = document.getElementById('task-priority-filter').value;
+  renderTasks(allTasks.filter(t =>
+    (!q || t.title.toLowerCase().includes(q)) &&
+    (!s || t.status === s) && (!p || t.priority === p)
+  ));
+}
+
+async function openTaskModal(t=null) {
+  await populateCustomerSelect('task-customer', t?.customer_id);
+  document.getElementById('modal-task-title').textContent = t ? 'Vazifani Tahrirlash' : 'Yangi Vazifa';
+  document.getElementById('task-id').value = t?.id || '';
+  document.getElementById('task-name').value = t?.title || '';
+  document.getElementById('task-status').value = t?.status || 'todo';
+  document.getElementById('task-priority').value = t?.priority || 'medium';
+  document.getElementById('task-due').value = t?.due_date ? t.due_date.split('T')[0] : '';
+  document.getElementById('task-desc').value = t?.description || '';
+  openModal('modal-task');
+}
+function editTask(t) { openTaskModal(t); }
+async function saveTask() {
+  const id = document.getElementById('task-id').value;
+  const data = {
+    title: document.getElementById('task-name').value,
+    status: document.getElementById('task-status').value,
+    priority: document.getElementById('task-priority').value,
+    due_date: document.getElementById('task-due').value || null,
+    customer_id: parseInt(document.getElementById('task-customer').value)||null,
+    description: document.getElementById('task-desc').value,
+  };
+  if (!data.title) { toast('Nomi majburiy!','error'); return; }
+  if (id) await apiFetch('/tasks/'+id,{method:'PUT',body:JSON.stringify(data)});
+  else await apiFetch('/tasks',{method:'POST',body:JSON.stringify(data)});
+  toast(id ? 'Vazifa yangilandi' : 'Vazifa qo\'shildi');
+  closeModal('modal-task'); loadTasks();
+}
+async function deleteTask(id) {
+  if (!confirm('Vazifani o\'chirishni tasdiqlaysizmi?')) return;
+  await apiFetch('/tasks/'+id,{method:'DELETE'});
+  toast('Vazifa o\'chirildi'); loadTasks();
+}
+
+// ─── ACTIVITIES ───────────────────────────────────────────────────────────────
+async function loadActivities() {
+  allActivities = await apiFetch('/activities?limit=100');
+  const feed = document.getElementById('activities-feed');
+  if (!allActivities.length) { feed.innerHTML = '<div class="empty"><p>Faoliyat yo\'q</p></div>'; return; }
+  feed.innerHTML = allActivities.map(a => `
+    <div class="activity-item">
+      <div style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;background:${actClrs[a.type]||'#888'}22;flex-shrink:0">${actIcons[a.type]||'•'}</div>
+      <div class="activity-body">
+        <div class="activity-desc">${a.description||'—'}</div>
+        <div class="activity-meta">${a.customer?.name ? '👤 '+a.customer.name+' · ' : ''}${fmtDate(a.created_at)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openActivityModal() {
+  await populateCustomerSelect('act-customer', null);
+  document.getElementById('act-type').value = 'call';
+  document.getElementById('act-desc').value = '';
+  openModal('modal-activity');
+}
+async function saveActivity() {
+  const data = {
+    type: document.getElementById('act-type').value,
+    description: document.getElementById('act-desc').value,
+    customer_id: parseInt(document.getElementById('act-customer').value)||null,
+  };
+  if (!data.description) { toast('Tavsif majburiy!','error'); return; }
+  await apiFetch('/activities',{method:'POST',body:JSON.stringify(data)});
+  toast('Faoliyat qo\'shildi');
+  closeModal('modal-activity'); loadActivities();
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+async function populateCustomerSelect(selId, selected=null) {
+  if (!allCustomers.length) allCustomers = await apiFetch('/customers?limit=200');
+  const sel = document.getElementById(selId);
+  sel.innerHTML = '<option value="">— Tanlang —</option>' +
+    allCustomers.map(c => `<option value="${c.id}" ${c.id==selected?'selected':''}>${c.name}</option>`).join('');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>

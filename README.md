@@ -1,0 +1,51 @@
+# NexusCRM — FastAPI + SQLite + SQLAlchemy
+
+## Loyiha tuzilmasi
+```
+crm/
+├── backend/
+│   ├── main.py         ← FastAPI endpointlar
+│   ├── models.py       ← SQLAlchemy modellari
+│   ├── schemas.py      ← Pydantic sxemalar
+│   ├── crud.py         ← Database operatsiyalar
+│   ├── database.py     ← SQLite ulanishi
+│   └── requirements.txt
+└── frontend/
+    └── index.html      ← To'liq SPA frontend
+```
+
+## Ishga tushirish
+
+### 1. Backend (FastAPI)
+```bash
+cd crm/backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+### 2. Frontend
+```bash
+# Oddiy HTTP server bilan
+cd crm/frontend
+python -m http.server 3000
+# Yoki VS Code Live Server ishlatish
+```
+
+Brauzerda: `http://localhost:3000`
+
+## API Hujjatlari
+Backend ishga tushgandan so'ng:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+## Funksiyalar
+- **Dashboard** — statistika, pipeline holati, so'nggi bitimlar
+- **Mijozlar** — CRUD, qidiruv, filtr, holat boshqaruv
+- **Bitimlar** — Sales pipeline, bosqich, ehtimollik
+- **Vazifalar** — To-do, muhimlik, muddat
+- **Faoliyat** — Qo'ng'iroq, email, uchrashuv, izoh tarixi
+
+## Texnologiyalar
+- **Backend**: FastAPI, SQLAlchemy ORM, SQLite, Pydantic v2
+- **Frontend**: Vanilla HTML/CSS/JS (dependency-free)
+- **DB**: SQLite (crm.db fayl avtomatik yaratiladi)
