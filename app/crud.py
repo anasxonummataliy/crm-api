@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from typing import Optional
-import models, schemas
+from app import models, schemas
 from datetime import datetime
 
 
