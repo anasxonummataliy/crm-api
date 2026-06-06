@@ -2,7 +2,7 @@ services:
   crm:
     build: .
     ports:
-      - "8000:8000"
+      - "8010:8010"
     volumes:
       - crm-data:/app/data
     environment:
