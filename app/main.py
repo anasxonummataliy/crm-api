@@ -43,16 +43,6 @@ app.add_middleware(
 
 
 # ─── AUTH ────────────────────────────────────────────────────────────────────
-@app.post("/api/auth/register", response_model=schemas.Token)
-def register(data: schemas.UserRegister, db: Session = Depends(get_db)):
-    existing = crud.get_user_by_email(db, data.email)
-    if existing:
-        raise HTTPException(400, "Bu email allaqachon ro'yxatdan o'tgan")
-    user = crud.create_user(db, data)
-    token = create_access_token({"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer", "user": user}
-
-
 @app.post("/api/auth/login", response_model=schemas.Token)
 def login(data: schemas.UserLogin, db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, data.email)
@@ -65,6 +55,49 @@ def login(data: schemas.UserLogin, db: Session = Depends(get_db)):
 @app.get("/api/auth/me", response_model=schemas.UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+# ─── USERS (Admin only) ─────────────────────────────────────────────────────
+@app.get("/api/users", response_model=List[schemas.UserResponse])
+def list_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(403, "Faqat admin uchun")
+    return db.query(User).order_by(User.created_at.desc()).all()
+
+
+@app.post("/api/users", response_model=schemas.UserResponse)
+def create_user_by_admin(
+    data: schemas.UserRegister,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(403, "Faqat admin uchun")
+    existing = crud.get_user_by_email(db, data.email)
+    if existing:
+        raise HTTPException(400, "Bu email allaqachon mavjud")
+    return crud.create_user(db, data)
+
+
+@app.delete("/api/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(403, "Faqat admin uchun")
+    if user_id == current_user.id:
+        raise HTTPException(400, "O'zingizni o'chira olmaysiz")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "Foydalanuvchi topilmadi")
+    db.delete(user)
+    db.commit()
+    return {"ok": True}
 
 
 # ─── DASHBOARD ───────────────────────────────────────────────────────────────

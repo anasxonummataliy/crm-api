@@ -37,12 +37,25 @@ client = TestClient(app)
 
 
 def get_auth_header():
-    """Register a test user and return auth header"""
-    client.post("/api/auth/register", json={
-        "full_name": "Test User",
-        "email": "test@test.com",
-        "password": "test123456",
-    })
+    """Create a test user directly in DB and return auth header"""
+    from app.auth import get_password_hash
+    from app.models import User as UserModel
+
+    db = TestingSessionLocal()
+    user = db.query(UserModel).filter(UserModel.email == "test@test.com").first()
+    if not user:
+        user = UserModel(
+            full_name="Test User",
+            email="test@test.com",
+            hashed_password=get_password_hash("test123456"),
+            role="admin",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    db.close()
+
     response = client.post("/api/auth/login", json={
         "email": "test@test.com",
         "password": "test123456",
@@ -53,54 +66,20 @@ def get_auth_header():
 
 # ═══ AUTH TESTS ═══
 
-def test_register():
-    response = client.post("/api/auth/register", json={
-        "full_name": "Alisher Karimov",
-        "email": "alisher@test.com",
-        "password": "secure123",
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["user"]["email"] == "alisher@test.com"
-
-
-def test_register_duplicate_email():
-    client.post("/api/auth/register", json={
-        "full_name": "User 1",
-        "email": "dup@test.com",
-        "password": "pass123456",
-    })
-    response = client.post("/api/auth/register", json={
-        "full_name": "User 2",
-        "email": "dup@test.com",
-        "password": "pass123456",
-    })
-    assert response.status_code == 400
-
-
 def test_login_success():
-    client.post("/api/auth/register", json={
-        "full_name": "Login User",
-        "email": "login@test.com",
-        "password": "mypassword",
-    })
+    headers = get_auth_header()  # creates user
     response = client.post("/api/auth/login", json={
-        "email": "login@test.com",
-        "password": "mypassword",
+        "email": "test@test.com",
+        "password": "test123456",
     })
     assert response.status_code == 200
     assert "access_token" in response.json()
 
 
 def test_login_wrong_password():
-    client.post("/api/auth/register", json={
-        "full_name": "User",
-        "email": "wrong@test.com",
-        "password": "correctpass",
-    })
+    get_auth_header()  # ensure user exists
     response = client.post("/api/auth/login", json={
-        "email": "wrong@test.com",
+        "email": "test@test.com",
         "password": "wrongpass",
     })
     assert response.status_code == 401

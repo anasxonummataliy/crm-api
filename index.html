@@ -278,29 +278,12 @@ select.filter-sel option{background:var(--bg2);color:var(--text)}
       <div class="form-group"><label>Parol</label><input type="password" id="login-password" placeholder="••••••••" required></div>
       <button type="submit" class="login-btn" id="loginBtn">Tizimga kirish</button>
     </form>
-    <div class="login-footer">Akkauntigiz yo'qmi? <a onclick="showRegister()">Ro'yxatdan o'tish</a></div>
+    <div class="login-footer">Tizimga kirish uchun admin bilan bog'laning</div>
     <div class="login-demo"><button type="button" onclick="demoLogin()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;font-weight:600;transition:var(--transition);" onmouseover="this.style.background='var(--primary-light)';this.style.color='var(--primary)';this.style.borderColor='var(--primary-mid)'" onmouseout="this.style.background='var(--bg3)';this.style.color='var(--text2)';this.style.borderColor='var(--border)'">🚀 Demo kirish</button></div>
   </div>
 </div>
 
-<!-- REGISTER -->
-<div class="login-page hidden" id="registerPage">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="login-logo-icon">N</div>
-      <h1>NexusCRM</h1>
-      <p>Yangi hisob yaratish</p>
-    </div>
-    <div class="login-error" id="registerError"></div>
-    <form class="login-form" id="registerForm" onsubmit="handleRegister(event)">
-      <div class="form-group"><label>To'liq ism</label><input type="text" id="reg-name" placeholder="Ism Familiya" required></div>
-      <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="email@company.com" required></div>
-      <div class="form-group"><label>Parol</label><input type="password" id="reg-password" placeholder="Kamida 6 belgi" required minlength="6"></div>
-      <button type="submit" class="login-btn" id="regBtn">Ro'yxatdan o'tish</button>
-    </form>
-    <div class="login-footer">Akkountingiz bormi? <a onclick="showLogin()">Kirish</a></div>
-  </div>
-</div>
+<!-- REGISTER page removed - only admin can create users -->
 
 <!-- APP -->
 <div class="app" id="appContainer">
@@ -316,6 +299,8 @@ select.filter-sel option{background:var(--bg2);color:var(--text)}
     <a class="nav-item" onclick="showPage('deals',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Bitimlar<span class="nav-count" id="nav-deal-count">0</span></a>
     <a class="nav-item" onclick="showPage('tasks',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Vazifalar<span class="nav-count" id="nav-task-count">0</span></a>
     <a class="nav-item" onclick="showPage('activities',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Faoliyat</a>
+    <div class="nav-label" id="adminSection" style="display:none">Admin</div>
+    <a class="nav-item" id="navUsers" style="display:none" onclick="showPage('users',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5v1a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z"/><path d="M21 20c0-3.3-4-6-9-6s-9 2.7-9 6"/></svg>Foydalanuvchilar</a>
   </div>
   <div class="sidebar-footer">
     <div class="user-card">
@@ -387,6 +372,15 @@ select.filter-sel option{background:var(--bg2);color:var(--text)}
       <div class="card"><div id="activities-feed"></div></div>
     </div>
 
+    <!-- USERS (Admin only) -->
+    <div class="page" id="page-users">
+      <div class="toolbar">
+        <div style="flex:1"></div>
+        <button class="btn btn-primary btn-sm" onclick="openUserModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Yangi foydalanuvchi</button>
+      </div>
+      <div class="card table-wrap"><table><thead><tr><th>Ism</th><th>Email</th><th>Rol</th><th>Sana</th><th></th></tr></thead><tbody id="users-tbody"></tbody></table></div>
+    </div>
+
   </div>
 </main>
 </div>
@@ -433,6 +427,15 @@ select.filter-sel option{background:var(--bg2);color:var(--text)}
   <div class="form-row"><label>Mijoz</label><select id="act-customer"><option value="">— Tanlang —</option></select></div>
   <div class="form-row"><label>Tavsif *</label><textarea id="act-desc" placeholder="Nima bo'ldi?"></textarea></div>
   <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-activity')">Bekor</button><button class="btn btn-primary" onclick="saveActivity()">Saqlash</button></div>
+</div></div>
+
+<div class="modal-overlay" id="modal-user"><div class="modal">
+  <div class="modal-title"><div class="modal-title-icon">👤</div>Yangi Foydalanuvchi</div>
+  <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
+  <div class="form-row"><label>To'liq ism *</label><input id="user-name" placeholder="Ism Familiya"></div>
+  <div class="form-row"><label>Email *</label><input id="user-email" type="email" placeholder="email@company.com"></div>
+  <div class="form-row"><label>Parol *</label><input id="user-password" type="password" placeholder="Kamida 6 belgi"></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-user')">Bekor</button><button class="btn btn-primary" onclick="saveUser()">Yaratish</button></div>
 </div></div>
 
 <div class="toast-container" id="toasts"></div>
@@ -518,8 +521,8 @@ async function apiFetch(path,opts={}){
 }
 
 // ─── NAV ────
-const pageTitles={dashboard:'Dashboard',customers:'Mijozlar',deals:'Bitimlar',tasks:'Vazifalar',activities:'Faoliyat'};
-const pageSubs={dashboard:"Umumiy statistika va ko'rsatkichlar",customers:'Kontakt bazasi boshqaruvi',deals:'Sotuv pipeline va bitimlar',tasks:"Vazifalar va ish rejasi",activities:'Faoliyat tarixi'};
+const pageTitles={dashboard:'Dashboard',customers:'Mijozlar',deals:'Bitimlar',tasks:'Vazifalar',activities:'Faoliyat',users:'Foydalanuvchilar'};
+const pageSubs={dashboard:"Umumiy statistika va ko'rsatkichlar",customers:'Kontakt bazasi boshqaruvi',deals:'Sotuv pipeline va bitimlar',tasks:"Vazifalar va ish rejasi",activities:'Faoliyat tarixi',users:"Jamoa a'zolari boshqaruvi"};
 function showPage(name,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
