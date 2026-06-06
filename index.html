@@ -279,7 +279,7 @@ select.filter-sel option{background:var(--bg2);color:var(--text)}
       <button type="submit" class="login-btn" id="loginBtn">Tizimga kirish</button>
     </form>
     <div class="login-footer">Tizimga kirish uchun admin bilan bog'laning</div>
-    <div class="login-demo"><button type="button" onclick="demoLogin()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;font-weight:600;transition:var(--transition);" onmouseover="this.style.background='var(--primary-light)';this.style.color='var(--primary)';this.style.borderColor='var(--primary-mid)'" onmouseout="this.style.background='var(--bg3)';this.style.color='var(--text2)';this.style.borderColor='var(--border)'">🚀 Demo kirish</button></div>
+    <div class="login-demo"><button type="button" onclick="demoLogin()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;font-weight:600;transition:var(--transition);" onmouseover="this.style.background='var(--primary-light)';this.style.color='var(--primary)';this.style.borderColor='var(--primary-mid)'" onmouseout="this.style.background='var(--bg3)';this.style.color='var(--text2)';this.style.borderColor='var(--border)'">🔑 Admin kirish</button></div>
   </div>
 </div>
 
@@ -489,13 +489,17 @@ function logout(){token=null;localStorage.removeItem('crm_token');currentUser=nu
 
 function enterApp(){
   document.getElementById('loginPage').classList.add('hidden');
-  document.getElementById('registerPage').classList.add('hidden');
+  document.getElementById('registerPage')&&document.getElementById('registerPage').classList.add('hidden');
   document.getElementById('appContainer').classList.add('active');
   if(currentUser){
-    const initials=currentUser.full_name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    document.getElementById('userAvatar').textContent=initials;
+    const ini=currentUser.full_name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('userAvatar').textContent=ini;
     document.getElementById('userName').textContent=currentUser.full_name;
     document.getElementById('userRole').textContent=currentUser.role==='admin'?'Administrator':'Manager';
+    if(currentUser.role==='admin'){
+      document.getElementById('adminSection').style.display='';
+      document.getElementById('navUsers').style.display='';
+    }
   }
   loadDashboard();
 }
@@ -533,7 +537,7 @@ function showPage(name,el){
   document.getElementById('pageSubtitle').textContent=pageSubs[name];
   loadPage(name);closeSidebar();
 }
-function loadPage(n){if(n==='dashboard')loadDashboard();else if(n==='customers')loadCustomers();else if(n==='deals')loadDeals();else if(n==='tasks')loadTasks();else if(n==='activities')loadActivities()}
+function loadPage(n){if(n==='dashboard')loadDashboard();else if(n==='customers')loadCustomers();else if(n==='deals')loadDeals();else if(n==='tasks')loadTasks();else if(n==='activities')loadActivities();else if(n==='users')loadUsers()}
 function loadAll(){loadPage(currentPage)}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('active')}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('active')}
@@ -633,6 +637,19 @@ async function loadActivities(){
 }
 async function openActivityModal(){await populateSelect('act-customer',null);document.getElementById('act-type').value='call';document.getElementById('act-desc').value='';openModal('modal-activity')}
 async function saveActivity(){const data={type:document.getElementById('act-type').value,description:document.getElementById('act-desc').value,customer_id:parseInt(document.getElementById('act-customer').value)||null};if(!data.description){toast('Tavsif majburiy!','error');return}try{await apiFetch('/activities',{method:'POST',body:JSON.stringify(data)});toast('Faoliyat qo\'shildi');closeModal('modal-activity');loadActivities()}catch(e){toast(e.message,'error')}}
+
+// ─── USERS (Admin) ────
+async function loadUsers(){
+  try{
+    const users=await apiFetch('/users');
+    const tb=document.getElementById('users-tbody');
+    if(!users.length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><p>Foydalanuvchilar yo\'q</p></div></td></tr>';return}
+    tb.innerHTML=users.map(u=>`<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="background:${avatarBg(u.full_name)}">${initials(u.full_name)}</div>${u.full_name}</div></td><td>${u.email}</td><td>${badge(u.role==='admin'?'negotiation':'prospect',u.role==='admin'?'Admin':'Manager')}</td><td>${fmtDate(u.created_at)}</td><td>${u.id!==currentUser.id?`<div class="actions"><button class="icon-btn del" onclick="deleteUser(${u.id})">🗑</button></div>`:''}</td></tr>`).join('');
+  }catch(e){console.error(e)}
+}
+function openUserModal(){document.getElementById('user-name').value='';document.getElementById('user-email').value='';document.getElementById('user-password').value='';openModal('modal-user')}
+async function saveUser(){const data={full_name:document.getElementById('user-name').value,email:document.getElementById('user-email').value,password:document.getElementById('user-password').value};if(!data.full_name||!data.email||!data.password){toast('Barcha maydonlar majburiy!','error');return}try{await apiFetch('/users',{method:'POST',body:JSON.stringify(data)});toast('Foydalanuvchi yaratildi');closeModal('modal-user');loadUsers()}catch(e){toast(e.message,'error')}}
+async function deleteUser(id){if(!confirm("Foydalanuvchini o'chirishni tasdiqlaysizmi?"))return;try{await apiFetch('/users/'+id,{method:'DELETE'});toast("Foydalanuvchi o'chirildi");loadUsers()}catch(e){toast(e.message,'error')}}
 
 // ─── UTILS ────
 async function populateSelect(selId,selected=null){
