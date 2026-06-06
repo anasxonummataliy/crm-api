@@ -1,6 +1,7 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -18,17 +19,19 @@ from app.seed import seed_database
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="NexusCRM API", version="2.0.0", description="Professional CRM System")
 
-
-@app.on_event("startup")
-def on_startup():
-    """Loyiha ishga tushganda demo ma'lumotlarni qo'shadi"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup: demo ma'lumotlarni qo'shadi"""
     db = SessionLocal()
     try:
         seed_database(db)
     finally:
         db.close()
+    yield
+
+
+app = FastAPI(title="NexusCRM API", version="2.0.0", description="Professional CRM System", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
