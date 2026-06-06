@@ -49,7 +49,7 @@ def register(data: schemas.UserRegister, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(400, "Bu email allaqachon ro'yxatdan o'tgan")
     user = crud.create_user(db, data)
-    token = create_access_token({"sub": user.id})
+    token = create_access_token({"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
@@ -58,7 +58,7 @@ def login(data: schemas.UserLogin, db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, data.email)
     if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(401, "Email yoki parol noto'g'ri")
-    token = create_access_token({"sub": user.id})
+    token = create_access_token({"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
