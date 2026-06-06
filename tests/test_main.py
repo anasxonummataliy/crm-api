@@ -1,36 +1,27 @@
 import sys
-import os
 from pathlib import Path
 
-# Loyiha ildizini qo'shish
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database import get_db, Base
-from app import models
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Test uchun alohida database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
-
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# Har bir test oldidan jadvalarni yaratish
 @pytest.fixture(scope="function", autouse=True)
 def setup_database():
-    """Har bir test oldidan bazani tozalab, qayta yaratadi"""
-    Base.metadata.drop_all(bind=engine)  # Eski ma'lumotlarni tozalash
-    Base.metadata.create_all(bind=engine)  # Jadvalarni yaratish
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
     yield
-    # Test tugagandan keyin ham tozalash mumkin (ixtiyoriy)
-    # Base.metadata.drop_all(bind=engine)
 
 
 def override_get_db():
@@ -42,35 +33,228 @@ def override_get_db():
 
 
 app.dependency_overrides[get_db] = override_get_db
-
 client = TestClient(app)
 
-# ====================== TESTS ======================
 
+def get_auth_header():
+    """Register a test user and return auth header"""
+    client.post("/api/auth/register", json={
+        "full_name": "Test User",
+        "email": "test@test.com",
+        "password": "test123456",
+    })
+    response = client.post("/api/auth/login", json={
+        "email": "test@test.com",
+        "password": "test123456",
+    })
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+# ═══ AUTH TESTS ═══
+
+def test_register():
+    response = client.post("/api/auth/register", json={
+        "full_name": "Alisher Karimov",
+        "email": "alisher@test.com",
+        "password": "secure123",
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert data["user"]["email"] == "alisher@test.com"
+
+
+def test_register_duplicate_email():
+    client.post("/api/auth/register", json={
+        "full_name": "User 1",
+        "email": "dup@test.com",
+        "password": "pass123456",
+    })
+    response = client.post("/api/auth/register", json={
+        "full_name": "User 2",
+        "email": "dup@test.com",
+        "password": "pass123456",
+    })
+    assert response.status_code == 400
+
+
+def test_login_success():
+    client.post("/api/auth/register", json={
+        "full_name": "Login User",
+        "email": "login@test.com",
+        "password": "mypassword",
+    })
+    response = client.post("/api/auth/login", json={
+        "email": "login@test.com",
+        "password": "mypassword",
+    })
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
+
+def test_login_wrong_password():
+    client.post("/api/auth/register", json={
+        "full_name": "User",
+        "email": "wrong@test.com",
+        "password": "correctpass",
+    })
+    response = client.post("/api/auth/login", json={
+        "email": "wrong@test.com",
+        "password": "wrongpass",
+    })
+    assert response.status_code == 401
+
+
+def test_protected_endpoint_without_token():
+    response = client.get("/api/customers")
+    assert response.status_code == 401
+
+
+def test_me_endpoint():
+    headers = get_auth_header()
+    response = client.get("/api/auth/me", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["email"] == "test@test.com"
+
+
+# ═══ CUSTOMER TESTS ═══
 
 def test_create_customer():
-    response = client.post(
-        "/api/customers",
-        json={
-            "name": "Test Customer",
-            "email": "test@example.com",
-            "phone": "+998901234567",
-        },
-    )
+    headers = get_auth_header()
+    response = client.post("/api/customers", json={
+        "name": "Test Customer",
+        "email": "customer@example.com",
+        "phone": "+998901234567",
+        "company": "TestCorp",
+        "status": "lead",
+    }, headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Test Customer"
-    assert "id" in data
+    assert data["id"] is not None
 
 
 def test_list_customers():
-    response = client.get("/api/customers")
+    headers = get_auth_header()
+    client.post("/api/customers", json={"name": "Customer A"}, headers=headers)
+    client.post("/api/customers", json={"name": "Customer B"}, headers=headers)
+    response = client.get("/api/customers", headers=headers)
     assert response.status_code == 200
+    assert len(response.json()) == 2
 
+
+def test_update_customer():
+    headers = get_auth_header()
+    r = client.post("/api/customers", json={"name": "Old Name"}, headers=headers)
+    cid = r.json()["id"]
+    response = client.put(f"/api/customers/{cid}", json={"name": "New Name"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["name"] == "New Name"
+
+
+def test_delete_customer():
+    headers = get_auth_header()
+    r = client.post("/api/customers", json={"name": "Delete Me"}, headers=headers)
+    cid = r.json()["id"]
+    response = client.delete(f"/api/customers/{cid}", headers=headers)
+    assert response.status_code == 200
+    response = client.get(f"/api/customers/{cid}", headers=headers)
+    assert response.status_code == 404
+
+
+def test_search_customers():
+    headers = get_auth_header()
+    client.post("/api/customers", json={"name": "Alisher", "company": "TechUZ"}, headers=headers)
+    client.post("/api/customers", json={"name": "Bobur", "company": "LogiCo"}, headers=headers)
+    response = client.get("/api/customers?search=tech", headers=headers)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+# ═══ DEAL TESTS ═══
+
+def test_create_deal():
+    headers = get_auth_header()
+    response = client.post("/api/deals", json={
+        "title": "Big Deal",
+        "value": 15000,
+        "stage": "proposal",
+        "probability": 60,
+    }, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["title"] == "Big Deal"
+
+
+def test_list_deals_by_stage():
+    headers = get_auth_header()
+    client.post("/api/deals", json={"title": "Deal 1", "stage": "won"}, headers=headers)
+    client.post("/api/deals", json={"title": "Deal 2", "stage": "lost"}, headers=headers)
+    response = client.get("/api/deals?stage=won", headers=headers)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+def test_update_deal():
+    headers = get_auth_header()
+    r = client.post("/api/deals", json={"title": "Draft"}, headers=headers)
+    did = r.json()["id"]
+    response = client.put(f"/api/deals/{did}", json={"title": "Final", "stage": "won"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["stage"] == "won"
+
+
+# ═══ TASK TESTS ═══
+
+def test_create_task():
+    headers = get_auth_header()
+    response = client.post("/api/tasks", json={
+        "title": "Call client",
+        "priority": "high",
+        "status": "todo",
+    }, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["priority"] == "high"
+
+
+def test_filter_tasks():
+    headers = get_auth_header()
+    client.post("/api/tasks", json={"title": "Task A", "status": "done"}, headers=headers)
+    client.post("/api/tasks", json={"title": "Task B", "status": "todo"}, headers=headers)
+    response = client.get("/api/tasks?status=todo", headers=headers)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+# ═══ ACTIVITY TESTS ═══
+
+def test_create_activity():
+    headers = get_auth_header()
+    response = client.post("/api/activities", json={
+        "type": "call",
+        "description": "Called the client about proposal",
+    }, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["type"] == "call"
+
+
+# ═══ DASHBOARD TESTS ═══
 
 def test_dashboard_stats():
-    response = client.get("/api/dashboard/stats")
+    headers = get_auth_header()
+    client.post("/api/customers", json={"name": "C1"}, headers=headers)
+    client.post("/api/deals", json={"title": "D1", "value": 5000, "stage": "won"}, headers=headers)
+    client.post("/api/deals", json={"title": "D2", "value": 3000, "stage": "proposal"}, headers=headers)
+    client.post("/api/tasks", json={"title": "T1", "status": "todo"}, headers=headers)
+
+    response = client.get("/api/dashboard/stats", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    assert "total_customers" in data
-    assert "pipeline_value" in data
+    assert data["total_customers"] == 1
+    assert data["total_deals"] == 2
+    assert data["won_deals"] == 1
+    assert data["pipeline_value"] == 3000
+    assert data["won_value"] == 5000
+    assert data["pending_tasks"] == 1
+    assert "pipeline_by_stage" in data
+    assert "conversion_rate" in data

@@ -1,13 +1,19 @@
-version: '3.8'
-
 services:
   crm:
     build: .
     ports:
-      - "8010:8010"
+      - "8000:8000"
     volumes:
-      - ./app:/app/app
-      - ./crm.db:/app/crm.db
+      - crm-data:/app/data
     environment:
-      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=sqlite:///./data/crm.db
+      - SECRET_KEY=${SECRET_KEY:-crm-production-secret-key-2024}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  crm-data:
