@@ -2,7 +2,25 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from typing import Optional
 from app import models, schemas
+from app.auth import get_password_hash
 from datetime import datetime
+
+
+# ─── AUTH ─────────────────────────────────────────────────────────────────────
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == email).first()
+
+
+def create_user(db: Session, data: schemas.UserRegister):
+    user = models.User(
+        full_name=data.full_name,
+        email=data.email,
+        hashed_password=get_password_hash(data.password),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 # ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -43,9 +61,10 @@ def get_dashboard_stats(db: Session):
             .scalar()
             or 0
         )
-        pipeline_by_stage.append(
-            {"stage": stage, "count": count, "value": round(val, 2)}
-        )
+        pipeline_by_stage.append({"stage": stage, "count": count, "value": round(val, 2)})
+
+    # Conversion rate
+    conversion_rate = round((won_deals / total_deals * 100) if total_deals > 0 else 0, 1)
 
     return {
         "total_customers": total_customers,
@@ -56,6 +75,7 @@ def get_dashboard_stats(db: Session):
         "won_value": round(won_value, 2),
         "total_tasks": total_tasks,
         "pending_tasks": pending_tasks,
+        "conversion_rate": conversion_rate,
         "recent_activities": recent_activities,
         "pipeline_by_stage": pipeline_by_stage,
     }
