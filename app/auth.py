@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import VerifyMismatchError, InvalidHashError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -19,7 +19,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         return ph.verify(hashed_password, plain_password)
-    except VerifyMismatchError:
+    except (VerifyMismatchError, InvalidHashError, Exception):
         return False
 
 
